@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Hotel = require('../models/hotel');
+const Hotel = require('../models/DB_hotel');
 
 router.get('/', (req, res) => {
     res.send('landing');

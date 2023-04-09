@@ -13,5 +13,6 @@ const userSchema = new mongoose.Schema({
     
    }
 });
-const User = mongoose.model('user', hotelSchema);
+userSchema.plugin(passportLocalMongoose);
+const User = mongoose.model('user', userSchema);
 module.exports = User;

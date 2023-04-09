@@ -35,7 +35,7 @@ app.use(
 		}
 	})
 );
-
+const User = require('./models/DB_user');
 app.use(passport.initialize());
 app.use(passport.session());
 passport.use(new localStrategy(User.authenticate()));
@@ -55,10 +55,15 @@ app.use((req,res, next)=>{
 
 });
 
+const authRoutes = require('./routes/auth'),
+  hotelRoutes = require('./routes/hotels');
+// 	  userRoutes = require('./routes/users');
+//  const reviewRoutes = require('./routes/reviews');
+ app.use(authRoutes);
+ app.use(hotelRoutes);
+// app.use(userRoutes);
+// app.use(reviewRoutes);
 
-const hotelRoutes = require('./routes/hotel');
-const passport = require('passport');
-app.use(hotelRoutes);
 
 const PORT = process.env.PORT;
 app.listen(PORT, ()=> {
