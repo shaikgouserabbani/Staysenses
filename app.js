@@ -18,7 +18,7 @@ mongoose.connect(URI)
 
 app.use(flash());
 app.use((req,res, next)=>{
-    res.locals.sucess = req.flash('sucess');
+    res.locals.sucess = req.flash('sucess');  
     res.locals.error = error.flash('error');
     next();
 
