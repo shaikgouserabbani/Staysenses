@@ -9,11 +9,11 @@ const express = require('express'),
 const app = express();
 require('dotenv').config();
 
-const DB_USERNAME = process.env.USERNAME,
-DB_USERPASS = process.env.USERPASS;
-const URI = `mongodb+srv://${DB_USERNAME}:${DB_USERPASS}@staysense.7ut2cez.mongodb.net/?retryWrites=true&w=majority`;
-
-mongoose.connect(URI) 
+const DB_USERNAME = process.env.DB_USERNAME,
+DB_USERPASS = process.env.DB_USERPASS;
+const URI = `mongodb+srv://${DB_USERNAME}:${DB_USERPASS}@cluster1.rlnmfjh.mongodb.net/?retryWrites=true&w=majority`;
+mongoose
+.connect(URI) 
 .then(()=> {
     console.log('db working');
 })
@@ -50,7 +50,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(methodOverride('_method'));
 app.use((req,res, next)=>{
     res.locals.sucess = req.flash('sucess');  
-    res.locals.error = error.flash('error');
+    res.locals.error = req.flash('error');
     next();
 
 });
