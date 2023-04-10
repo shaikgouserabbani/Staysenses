@@ -49,7 +49,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(methodOverride('_method'));
 app.use((req,res, next)=>{
-    res.locals.sucess = req.flash('sucess');  
+    res.locals.success = req.flash('success');  
     res.locals.error = req.flash('error');
     next();
 

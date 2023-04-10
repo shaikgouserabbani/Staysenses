@@ -10,7 +10,7 @@ router.get('/hotels', async (req, res) => {
 
     try {
         let hotels = await Hotel.find({});
-        res,render('hotels/index',{hotels})
+        res.render('hotels/index',{hotels})
         
     } catch (error) {
         req.flash('error', 'error while featching hotels, plz try again');
