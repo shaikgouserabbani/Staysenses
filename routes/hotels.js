@@ -43,7 +43,7 @@ router.post('/hotels', isLoggedIn,upload.array('image'), async (req, res) => {
 
 router.get('/hotels/:id', async (req, res) => {
 	try {
-		let hotel = await Hotel.findById(req.params.id).populate(author).populate(reviews);
+		let hotel = await Hotel.findById(req.params.id).populate('author').populate('reviews');
 		res.render('hotels/show', { hotel});
 	} catch (error) {
 		req.flash('error', 'error while fetching a hotel, please try again later');
