@@ -1,21 +1,91 @@
-const express = require('express');
+const express = require('express'),
+     {isLoggedIn,isHotelAuthor } = require('../middlewares/index')
 const router = express.Router();
 const Hotel = require('../models/DB_hotel');
 
+const multer = require('multer');
+const { storage } = require('../Cloudinary/cloud');
+const upload = multer({ storage });
+
+
 router.get('/', (req, res) => {
-    res.send('landing');
+	res.render('landing');
 });
 
 router.get('/hotels', async (req, res) => {
+	try {
+		let hotels = await Hotel.find({});
+		res.render('hotels/index', { hotels });
+	} catch (error) {
+		req.flash('error', 'error while fetching hotels, please try again later');
+		console.log(error);
+		res.redirect('/');
+	}
+});
 
-    try {
-        let hotels = await Hotel.find({});
-        res.render('hotels/index',{hotels})
-        
-    } catch (error) {
-        req.flash('error', 'error while featching hotels, plz try again');
-        res.redirect('/')
-    }
+router.get('/hotels/new', isLoggedIn, (req, res) => {
+	res.render('hotels/new');
+});
+
+router.post('/hotels', isLoggedIn,upload.array('image'), async (req, res) => {
+	try {
+		let hotel = new Hotel(req.body.hotel);
+        hotel.author = req.user._id;
+		await hotel.save();
+		req.flash('success', 'hotel created');
+		res.redirect(`/hotels/${hotel._id}`);
+	} catch (error) {
+		req.flash('error', 'error while creating hotel, please try again later');
+		console.log(error);
+		res.redirect('/hotels');
+	}
+});
+
+router.get('/hotels/:id', async (req, res) => {
+	try {
+		let hotel = await Hotel.findById(req.params.id).populate(author).populate(reviews);
+		res.render('hotels/show', { hotel});
+	} catch (error) {
+		req.flash('error', 'error while fetching a hotel, please try again later');
+		console.log(error);
+		res.redirect('/hotels');
+	}
+});
+
+router.get('/hotels/:id/edit',isLoggedIn,isHotelAuthor, async (req, res) => {
+	try {
+		let hotel = await Hotel.findById(req.params.id);
+		res.render('hotels/edit', { hotel });
+	} catch (error) {
+		req.flash('error', 'error while fetching a hotel, please try again later');
+		console.log(error);
+		res.redirect('/hotels');
+	}
+});
+
+router.patch('/hotels/:id', isLoggedIn,isHotelAuthor,async (req, res) => {
+	try {
+		await Hotel.findByIdAndUpdate(req.params.id);
+		console.log(req.body);
+		req.flash('success', 'update done');
+		res.redirect(`/hotels/${req.params.id}`);
+	} catch (error) {
+		req.flash('error', 'error while updating a hotel, please try again later');
+		console.log(error);
+		res.redirect('/hotels');
+	}
+});
+
+router.delete('/hotels/:id', isLoggedIn,isHotelAuthor, async (req, res) => {
+	try {
+		await Hotel.findByIdAndDelete(req.params.id);
+		req.flash('success', 'delete done');
+		res.redirect('/hotels');
+	} catch (error) {
+		req.flash('error', 'error while deleting a hotel, please try again later');
+		console.log(error);
+		res.redirect('/hotels');
+	}
 });
 
 module.exports = router;
