@@ -30,20 +30,25 @@
                 </li>
               </ul>
                 <ul class="navbar-nav  mb-2 mb-lg-0">
+                  <% if (!currentUser) { %>
                 <li class="nav-item">
                     <a class="nav-link active" aria-current="page" href="/login">Login</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="/register">Register</a>
                 </li>
-             
+             <% } else { %>
+              <li class="nav-item">
+                <a class="nav-link" href="/users/<%=currentUser._id %>">currently logged in as :<%= currentUser.name %></a>
+            </li>
                 <li class="nav-item">
                     <a class="nav-link" href="/logout">Logout</a>
                 </li>
+                <%}%>
             </ul>
         </div>
-    </div>rs
-</nav>rs
+    </div>
+</nav>
 <% if (success && success.length>0) { %>
 <div class="alert alert-success" role="alert">
     <%= success %>

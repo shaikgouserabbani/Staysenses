@@ -49,6 +49,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(methodOverride('_method'));
 app.use((req,res, next)=>{
+	res.locals.currentUser = req.user;
     res.locals.success = req.flash('success');  
     res.locals.error = req.flash('error');
     next();
@@ -56,13 +57,13 @@ app.use((req,res, next)=>{
 });
 
 const authRoutes = require('./routes/auth'),
-  hotelRoutes = require('./routes/hotels');
-// 	  userRoutes = require('./routes/users');
-//  const reviewRoutes = require('./routes/reviews');
+  hotelRoutes = require('./routes/hotels'),
+  userRoutes = require('./routes/users');
+ const reviewRoutes = require('./routes/reviews');
  app.use(authRoutes);
  app.use(hotelRoutes);
-// app.use(userRoutes);
-// app.use(reviewRoutes);
+ app.use(userRoutes);
+ app.use(reviewRoutes);
 
 
 const PORT = process.env.PORT;
