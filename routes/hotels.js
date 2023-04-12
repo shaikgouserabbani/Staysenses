@@ -31,6 +31,12 @@ router.post('/hotels', isLoggedIn,upload.array('image'), async (req, res) => {
 	try {
 		let hotel = new Hotel(req.body.hotel);
         hotel.author = req.user._id;
+		for (let file of req.files) {
+			hotel.images.push({
+				url: file.path,
+				filename: file.filename
+			});
+		}
 		await hotel.save();
 		req.flash('success', 'hotel created');
 		res.redirect(`/hotels/${hotel._id}`);
@@ -66,7 +72,6 @@ router.get('/hotels/:id/edit',isLoggedIn,isHotelAuthor, async (req, res) => {
 router.patch('/hotels/:id', isLoggedIn,isHotelAuthor,async (req, res) => {
 	try {
 		await Hotel.findByIdAndUpdate(req.params.id);
-		console.log(req.body);
 		req.flash('success', 'update done');
 		res.redirect(`/hotels/${req.params.id}`);
 	} catch (error) {
