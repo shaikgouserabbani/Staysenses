@@ -13,7 +13,12 @@ const DB_USERNAME = process.env.DB_USERNAME,
 DB_USERPASS = process.env.DB_USERPASS;
 const URI = `mongodb+srv://${DB_USERNAME}:${DB_USERPASS}@cluster1.rlnmfjh.mongodb.net/?retryWrites=true&w=majority`;
 mongoose
-.connect(URI) 
+.connect(URI,{
+		useNewUrlParser: true,
+		useCreateIndex: true,
+		useUnifiedTopology: true,
+		useFindAndModify: false
+})
 .then(()=> {
     console.log('db working');
 })

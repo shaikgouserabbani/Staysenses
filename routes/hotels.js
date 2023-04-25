@@ -3,9 +3,15 @@ const express = require('express'),
 const router = express.Router();
 const Hotel = require('../models/DB_hotel');
 
+// ! cloud upload
 const multer = require('multer');
 const { storage } = require('../Cloudinary/cloud');
 const upload = multer({ storage });
+
+// ! mapbox
+const mbxGeocoding = require('@mapbox/mapbox-sdk/services/geocoding');
+const geoCoder = mbxGeocoding({ accessToken: process.env.MAPBOX_TOKEN });
+
 
 
 router.get('/', (req, res) => {
@@ -37,6 +43,16 @@ router.post('/hotels', isLoggedIn,upload.array('image'), async (req, res) => {
 				filename: file.filename
 			});
 		}
+		
+		// * geocoding using mapbox
+		const geoData = await geoCoder
+			.forwardGeocode({
+				query: req.body.hotel.address,
+				limit: 1
+			})
+			.send();
+		// console.log(geoData.body.features[0].geometry.coordinates);
+		hotel.geometry = geoData.body.features[0].geometry
 		await hotel.save();
 		req.flash('success', 'hotel created');
 		res.redirect(`/hotels/${hotel._id}`);
@@ -50,7 +66,8 @@ router.post('/hotels', isLoggedIn,upload.array('image'), async (req, res) => {
 router.get('/hotels/:id', async (req, res) => {
 	try {
 		let hotel = await Hotel.findById(req.params.id).populate('author').populate('reviews');
-		res.render('hotels/show', { hotel});
+		let coordinates = hotel.geometry.coordinates;
+		res.render('hotels/show', { hotel, coordinates});
 	} catch (error) {
 		req.flash('error', 'error while fetching a hotel, please try again later');
 		console.log(error);
