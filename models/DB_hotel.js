@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const mongoosePaginate = require('mongoose-paginate-v2');
 const hotelSchema = new mongoose.Schema({
 	name: {
 		type: String,
@@ -66,5 +67,6 @@ const hotelSchema = new mongoose.Schema({
 		}
 	]
 });
+hotelSchema.plugin(mongoosePaginate);
 const Hotel = mongoose.model('hotel', hotelSchema);
 module.exports = Hotel;
