@@ -12,6 +12,9 @@ const upload = multer({ storage });
 const mbxGeocoding = require('@mapbox/mapbox-sdk/services/geocoding');
 const geoCoder = mbxGeocoding({ accessToken: process.env.MAPBOX_TOKEN });
 
+// ! STRIPE PAYMENT
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
 
 
 router.get('/', (req, res) => {
@@ -20,7 +23,14 @@ router.get('/', (req, res) => {
 
 router.get('/hotels', async (req, res) => {
 	try {
-		let hotels = await Hotel.find({});
+		let options = {
+			page: req.query.page || 1,
+			limit: 5,
+			sort: {
+				_id: 'desc'
+			}
+		};
+		let hotels = await Hotel.paginate({},options);
 		res.render('hotels/index', { hotels });
 	} catch (error) {
 		req.flash('error', 'error while fetching hotels, please try again later');
@@ -37,6 +47,7 @@ router.post('/hotels', isLoggedIn,upload.array('image'), async (req, res) => {
 	try {
 		let hotel = new Hotel(req.body.hotel);
         hotel.author = req.user._id;
+		
 		for (let file of req.files) {
 			hotel.images.push({
 				url: file.path,
@@ -110,4 +121,116 @@ router.delete('/hotels/:id', isLoggedIn,isHotelAuthor, async (req, res) => {
 	}
 });
 
+router.get('/hotels/:id/upvote', isLoggedIn, async (req, res) => {
+	try {
+		// check if user has already liked - remove the like
+		const { id } = req.params;
+		const hotel = await Hotel.findById(id);
+		const upvoteExists = await Hotel.findOne({
+			_id: id,
+			upvotes: req.user._id
+		});
+		const downvoteExists = await Hotel.findOne({
+			_id: id,
+			downvotes: req.user._id
+		});
+		if (upvoteExists) {
+			const hotel = await Hotel.findByIdAndUpdate(id, {
+				$pull: { upvotes: req.user._id }
+			});
+			console.log('removed like');
+			res.redirect(`/hotels/${req.params.id}`);
+		} else if (downvoteExists) {
+			// toggle user from downvotes array to upvotes array
+			const hotel = await Hotel.findByIdAndUpdate(id, {
+				$pull: { downvotes: req.user._id },
+				$push: { upvotes: req.user._id }
+			});
+			console.log('removed your dislike and added a like');
+			res.redirect(`/hotels/${req.params.id}`);
+		} else {
+			hotel.upvotes.push(req.user);
+			await hotel.save();
+			console.log('added like');
+			res.redirect(`/hotels/${req.params.id}`);
+		}
+	} catch (error) {
+		req.flash('error', 'error while adding a like, please try again later');
+		console.log(error);
+		res.redirect(`/hotels/${req.params.id}`);
+	}
+});
+router.get('/hotels/:id/downvote', isLoggedIn, async (req, res) => {
+	try {
+		// check if user has already liked - remove the like
+		const { id } = req.params;
+		const hotel = await Hotel.findById(id);
+		const upvoteExists = await Hotel.findOne({
+			_id: id,
+			upvotes: req.user._id
+		});
+		const downvoteExists = await Hotel.findOne({
+			_id: id,
+			downvotes: req.user._id
+		});
+		if (upvoteExists) {
+			// toggle user from upvotes array to downvotes array
+			const hotel = await Hotel.findByIdAndUpdate(id, {
+				$pull: { upvotes: req.user._id },
+				$push: { downvotes: req.user._id }
+			});
+			console.log('removed your like and added a dislike');
+			res.redirect(`/hotels/${req.params.id}`);
+		} else if (downvoteExists) {
+			const hotel = await Hotel.findByIdAndUpdate(id, {
+				$pull: { downvotes: req.user._id }
+			});
+			console.log('removed dislike');
+			res.redirect(`/hotels/${req.params.id}`);
+		} else {
+			hotel.downvotes.push(req.user);
+			await hotel.save();
+			console.log('added dislike');
+			res.redirect(`/hotels/${req.params.id}`);
+		}
+	} catch (error) {
+		req.flash('error', 'error while adding a like, please try again later');
+		console.log(error);
+		res.redirect(`/hotels/${req.params.id}`);
+	}
+
+});
+
+router.get('/hotels/:id/checkout/success', (req, res) => {
+	res.send('payment done');
+});
+router.get('/cancel', (req, res) => {
+	res.send('error while paying for hotel');
+});
+
+router.get('/hotels/:id/checkout', isLoggedIn, async (req, res) => {
+	const hotel = await Hotel.findById(req.params.id);
+	const session = await stripe.checkout.sessions.create({
+		payment_method_types: [ 'card' ],
+		customer_email: req.user.username,
+		line_items: [
+			{
+				price_data: {
+					currency: 'inr',
+					product_data: {
+						name: hotel.name,
+						description: hotel.address,
+						images: [ hotel.images[0].url ]
+					},
+					unit_amount: hotel.price * 100
+				},
+				quantity: 1
+			}
+		],
+		mode: 'payment',
+		success_url: `${process.env.URL_SERV}/hotels/${hotel._id}/checkout/success`,
+		cancel_url: 'http://localhost:3006/cancel'
+	});
+	res.redirect(session.url);
+});
 module.exports = router;
